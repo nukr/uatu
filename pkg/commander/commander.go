@@ -25,12 +25,19 @@ func (c *Commander) Run() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	stderr, err := c.cmd.StderrPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
 	err = c.cmd.Start()
 	if err != nil {
 		log.Fatal(err)
 	}
 	go func() {
 		io.Copy(os.Stdout, stdout)
+	}()
+	go func() {
+		io.Copy(os.Stderr, stderr)
 	}()
 }
 
