@@ -2,10 +2,10 @@ package commander
 
 import (
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 )
 
 // Commander ...
@@ -15,23 +15,28 @@ type Commander struct {
 }
 
 // Run ...
-func (c *Commander) Run() {
+func (c *Commander) Run() error {
 	if c.cmd != nil {
-		c.cmd.Process.Kill()
+		pgid, err := syscall.Getpgid(c.cmd.Process.Pid)
+		if err != nil {
+			return err
+		}
+		syscall.Kill(-pgid, 15)
 	}
 	script := strings.Split(c.script, " ")
 	c.cmd = exec.Command(script[0], script[1:]...)
+	c.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	stdout, err := c.cmd.StdoutPipe()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	stderr, err := c.cmd.StderrPipe()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	err = c.cmd.Start()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	go func() {
 		io.Copy(os.Stdout, stdout)
@@ -39,6 +44,7 @@ func (c *Commander) Run() {
 	go func() {
 		io.Copy(os.Stderr, stderr)
 	}()
+	return nil
 }
 
 // New ...
