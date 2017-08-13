@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/go-kit/kit/log"
@@ -34,6 +36,14 @@ func main() {
 	}
 	w := watcher.New(*dirs, time.Second*2)
 	c := commander.New(*script)
+	go func() {
+		ch := make(chan os.Signal)
+		signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+		<-ch
+		logger.Log("msg", "stopping the world")
+		w.Stop()
+		c.Stop()
+	}()
 	err := c.Run()
 	if err != nil {
 		logger.Log("error", err)

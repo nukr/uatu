@@ -16,13 +16,7 @@ type Commander struct {
 
 // Run ...
 func (c *Commander) Run() error {
-	if c.cmd != nil {
-		pgid, err := syscall.Getpgid(c.cmd.Process.Pid)
-		if err != nil {
-			return err
-		}
-		syscall.Kill(-pgid, 15)
-	}
+	c.Stop()
 	script := strings.Split(c.script, " ")
 	c.cmd = exec.Command(script[0], script[1:]...)
 	c.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
@@ -44,6 +38,18 @@ func (c *Commander) Run() error {
 	go func() {
 		io.Copy(os.Stderr, stderr)
 	}()
+	return nil
+}
+
+func (c *Commander) Stop() error {
+	if c.cmd != nil && c.cmd.Process != nil {
+		pgid, err := syscall.Getpgid(c.cmd.Process.Pid)
+		if err != nil {
+			return err
+		} else {
+			syscall.Kill(-pgid, 15)
+		}
+	}
 	return nil
 }
 

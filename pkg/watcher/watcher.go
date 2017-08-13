@@ -1,6 +1,7 @@
 package watcher
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,11 +13,15 @@ type Watcher struct {
 	dirs     []string
 	interval time.Duration
 	files    map[string]os.FileInfo
+	isStop   bool
 }
 
 // Watch ...
 func (w *Watcher) Watch(fn func([]string)) {
 	for {
+		if w.isStop {
+			break
+		}
 		var paths []string
 		for _, dir := range w.dirs {
 			filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
@@ -40,6 +45,11 @@ func (w *Watcher) Watch(fn func([]string)) {
 		}
 		time.Sleep(w.interval)
 	}
+	log.Println("stopping watch")
+}
+
+func (w *Watcher) Stop() {
+	w.isStop = true
 }
 
 // New ...
@@ -58,5 +68,6 @@ func New(dirs string, interval time.Duration) *Watcher {
 		dirs:     ds,
 		interval: interval,
 		files:    files,
+		isStop:   false,
 	}
 }
