@@ -4,7 +4,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"strings"
 	"syscall"
 
 	"github.com/pkg/errors"
@@ -19,8 +18,8 @@ type Commander struct {
 // Run ...
 func (c *Commander) Run() error {
 	c.Stop()
-	script := strings.Split(c.script, " ")
-	c.cmd = exec.Command(script[0], script[1:]...)
+	shell := os.Getenv("SHELL")
+	c.cmd = exec.Command(shell, "-c", c.script)
 	c.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	stdout, err := c.cmd.StdoutPipe()
 	if err != nil {
@@ -43,14 +42,14 @@ func (c *Commander) Run() error {
 	return nil
 }
 
+// Stop kills all process we created
 func (c *Commander) Stop() error {
 	if c.cmd != nil && c.cmd.Process != nil {
 		pgid, err := syscall.Getpgid(c.cmd.Process.Pid)
 		if err != nil {
 			return err
-		} else {
-			syscall.Kill(-pgid, 15)
 		}
+		syscall.Kill(-pgid, 15)
 	}
 	return nil
 }

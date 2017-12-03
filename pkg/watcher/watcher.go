@@ -48,6 +48,7 @@ func (w *Watcher) Watch(fn func([]string)) {
 	log.Println("stopping watch")
 }
 
+// Stop the watcher
 func (w *Watcher) Stop() {
 	w.isStop = true
 }
