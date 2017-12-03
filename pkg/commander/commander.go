@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
+
+	"github.com/pkg/errors"
 )
 
 // Commander ...
@@ -22,7 +24,7 @@ func (c *Commander) Run() error {
 	c.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	stdout, err := c.cmd.StdoutPipe()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "c.cmd.StdoutPipe() error")
 	}
 	stderr, err := c.cmd.StderrPipe()
 	if err != nil {
